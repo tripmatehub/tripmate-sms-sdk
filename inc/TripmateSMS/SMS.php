@@ -147,7 +147,7 @@ class SMS
      * @param int $eventDate   UNIX time incident was logged
      * @throws \Exception
      */
-    public function deliver($phoneNumber, $activityCode, $eventDate, $retryCount=0)
+    public function deliver($phoneNumber, $incidentId, $activityCode, $eventDate, $retryCount=0)
     {
 
         if ($retryCount >= 3) {
@@ -159,7 +159,8 @@ class SMS
         }
 
         $data = [
-            'phone_number' => $phoneNumber,
+	    'phone_number' => $phoneNumber,
+            'incident_id' => $incidentId, 
             'activity_code' =>  $activityCode,
             'event_date' => date("Y-m-d", $eventDate)
         ];
