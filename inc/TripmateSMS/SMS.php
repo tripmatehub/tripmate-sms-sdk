@@ -145,10 +145,17 @@ class SMS
      * @param string $phoneNumber Claimant's phone number
      * @param string $activityCode  Activity code
      * @param int $eventDate   UNIX time incident was logged
+     * @return string|null
      * @throws \Exception
      */
     public function deliver($phoneNumber, $incidentId, $activityCode, $eventDate, $retryCount=0)
     {
+        // If the phone number isn't a real phone number return null
+        // Real phone numbers are 10-digit numbers or 11-digit numbers beginning with 1, but
+        // not numbers that just repeat the same digit, e.g. 5555555555
+        if ((! preg_match('/(?=^[1][0-9]\d{9}$|^[0-9]\d{9}$)(?!^([0-9])\1*$)/', $phoneNumber))) {
+            return null;
+        }
 
         if ($retryCount >= 3) {
             throw new \Exception('Authentication Error: Too many retries');
@@ -159,7 +166,7 @@ class SMS
         }
 
         $data = [
-	    'phone_number' => $phoneNumber,
+	        'phone_number' => $phoneNumber,
             'incident_id' => $incidentId, 
             'activity_code' =>  $activityCode,
             'event_date' => date("Y-m-d", $eventDate)
