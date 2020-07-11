@@ -49,15 +49,19 @@ class SMS
      */
     private $retryAttempts;
 
+
+
     /**
-     * Set up connection requirements
+     * All values required to create instance of SMS
+     *
      * @param string $baseUri
      * @param string $username
      * @param string $password
      * @param string|null $accessToken
-     * @param string|null $accessToken
+     * @param string|null $refreshToken
+     * @param integer $retryAttempts
      */
-    public function configure($baseUri, $username, $password, $accessToken = null, $refreshToken = null, $retryAttempts = 3)
+    public function __construct($baseUri, $username, $password, $accessToken = null, $refreshToken = null, $retryAttempts = 3)
     {
         $this->baseUri = $baseUri;
         $this->username = $username;
@@ -71,22 +75,7 @@ class SMS
     }
 
     /**
-     * SMS is a singleton.
-     * Get instance, instantiate as needed
-     * @return SMS
-     */
-    public static function getInstance()
-    {
-        if (self::$instance === null) {
-            self::$instance = new SMS();
-        }
-
-        return self::$instance;
-
-    }
-
-    /**
-     * Authenticate iwth SMS API
+     * Authenticate with SMS API
      * @param string|null username
      * @param string|null password
      * @throws mixed
