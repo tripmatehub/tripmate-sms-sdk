@@ -49,8 +49,6 @@ class SMS
      */
     private $retryAttempts;
 
-
-
     /**
      * All values required to create instance of SMS
      *
