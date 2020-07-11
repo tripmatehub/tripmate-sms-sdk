@@ -81,7 +81,7 @@ class SMS
      * @throws mixed
      * @return array
      */
-    public function authenticate($username = null, $password = null)
+    private function authenticate($username = null, $password = null)
     {
 
         if ($username) {
@@ -115,7 +115,7 @@ class SMS
     /**
      * Refresh Access Token using refresh Token
      */
-    public function refreshToken()
+    private function refreshToken()
     {
         if (! $this->refreshToken) {
             $this->authenticate();
