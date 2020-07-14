@@ -45,19 +45,27 @@ class SMS
     private $baseUri;
 
     /**
-     * Set up connection requirements
+     * @var int $retryAttempts
+     */
+    private $retryAttempts;
+
+    /**
+     * All values required to create instance of SMS
+     *
      * @param string $baseUri
      * @param string $username
      * @param string $password
      * @param string|null $accessToken
-     * @param string|null $accessToken
+     * @param string|null $refreshToken
+     * @param integer $retryAttempts
      */
-    public function configure($baseUri, $username, $password, $accessToken = null, $refreshToken = null)
+    public function __construct($baseUri, $username, $password, $accessToken = null, $refreshToken = null, $retryAttempts = 3)
     {
         $this->baseUri = $baseUri;
         $this->username = $username;
         $this->password = $password;
         $this->accessToken = $accessToken;
+        $this->retryAttempts = $retryAttempts;
 
         $this->httpClient = new \GuzzleHttp\Client([
             'base_uri' => $baseUri
@@ -65,28 +73,13 @@ class SMS
     }
 
     /**
-     * SMS is a singleton.
-     * Get instance, instantiate as needed
-     * @return SMS
-     */
-    public static function getInstance()
-    {
-        if (self::$instance === null) {
-            self::$instance = new SMS();
-        }
-
-        return self::$instance;
-
-    }
-
-    /**
-     * Authenticate iwth SMS API
+     * Authenticate with SMS API
      * @param string|null username
      * @param string|null password
      * @throws mixed
      * @return array
      */
-    public function authenticate($username = null, $password = null)
+    private function authenticate($username = null, $password = null)
     {
 
         if ($username) {
@@ -120,7 +113,7 @@ class SMS
     /**
      * Refresh Access Token using refresh Token
      */
-    public function refreshToken()
+    private function refreshToken()
     {
         if (! $this->refreshToken) {
             $this->authenticate();
@@ -148,17 +141,13 @@ class SMS
      * @return string|null
      * @throws \Exception
      */
-    public function deliver($phoneNumber, $incidentId, $activityCode, $eventDate, $retryCount=0)
+    public function deliver($phoneNumber, $incidentId, $activityCode, $eventDate)
     {
         // If the phone number isn't a real phone number return null
         // Real phone numbers are 10-digit numbers or 11-digit numbers beginning with 1, but
         // not numbers that just repeat the same digit, e.g. 5555555555
         if ((! preg_match('/(?=^[1][0-9]\d{9}$|^[0-9]\d{9}$)(?!^([0-9])\1*$)/', $phoneNumber))) {
             return null;
-        }
-
-        if ($retryCount >= 3) {
-            throw new \Exception('Authentication Error: Too many retries');
         }
 
         if (! $this->accessToken) {
@@ -172,19 +161,24 @@ class SMS
             'event_date' => date("Y-m-d", $eventDate)
         ];
 
-        try {
-            $response = $this->post('sms/message/deliver', $data);
-            $body = json_decode((string) $response->getBody());
-            return $body;
-        } catch (\GuzzleHttp\Exception\ClientException $e) {
-            if ($e->getResponse()->getStatusCode() == 401 && preg_match('/Token/', $e->getResponse()->getBody())) {
-                $this->authenticate();
-                $this->deliver($phoneNumber, $activityCode, $eventDate, ++$retryCount);
-            } else {
-                throw new \Exception('Unknown Delivery Error');
+        $retryCount = 0;
+        while (true) {
+            try {
+                $response = $this->post('sms/message/deliver', $data);
+                $body = json_decode((string) $response->getBody());
+                return $body;
+            } catch (\GuzzleHttp\Exception\ClientException $e) {
+                if ($e->getResponse()->getStatusCode() == 401 && preg_match('/Token/', $e->getResponse()->getBody())) {
+                    if (++$retryCount >= $this->retryAttempts) {
+                        throw new \Exception('Authentication Error: Too many retries');
+                    }
+        
+                    $this->authenticate();
+                } else {
+                    throw new \Exception('Unknown Delivery Error');
+                }
             }
-        }
-
+        }   
     }
 
     /**
