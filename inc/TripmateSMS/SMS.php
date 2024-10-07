@@ -99,8 +99,8 @@ class SMS
         $body = json_decode((string) $response->getBody());
 
         $this->accessToken = $body->access_token;
-        $this->client_id = $body->client_id;
-        $this->refresh_token = $body->refresh_token;
+        $this->clientId = $body->client_id;
+        $this->refreshToken = $body->refresh_token;
 
         return [
             'accessToken' => $this->accessToken,
@@ -125,7 +125,7 @@ class SMS
             try{
                 $response = $this->post('user/refresh_token', $data);
                 $body = json_decode((string) $response->getBody());
-                $this->access_token = $body->access_token;
+                $this->accessToken = $body->access_token;
             } catch (\GuzzleHttp\Exception\ClientException $e) {
                 throw new \Exception('Unable to refresh token. ' . $e->getMessage());
             }
